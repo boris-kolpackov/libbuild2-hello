@@ -3,7 +3,17 @@ imp_libs = # Implementation dependencies.
 
 import imp_libs += build2%lib{build2} # Implied interface dependency.
 
-lib{build2-hello}: {hxx ixx txx cxx}{**} $imp_libs $int_libs
+lib{build2-hello}: {hxx ixx txx cxx}{**} $imp_libs $int_libs alias{adhoc}
+
+alias{adhoc}:
+{{ c++
+  recipe
+  apply (action, target&) const override
+  {
+    text (loc) << "Hello from ad hoc C++ recipe!";
+    return noop_recipe;
+  }
+}}
 
 # Build options.
 #
