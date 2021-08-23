@@ -22,14 +22,15 @@ b test
 
 > If building the module in a cross-compile configuration (normally together
 > with the build system), then we need to manually suppress importing of the
-> host build system by additing `import.build2=[null]` to module's
+> host build system by adding `import.build2=[null]` to module's
 > `config.build`.
 
 
 ## Using the project manager
 
-Because the module and the tests have to use different build configurations,
-the initialization is more elaborate compared to a typical project:
+Build system module and projects that use them (tests in our case) have to use
+different build configurations. To achieve this we use the split host/target
+configuration support.
 
 ```
 git clone .../libbuild2-hello.git
@@ -37,37 +38,35 @@ cd libbuild2-hello/
 
 bdep init --empty
 
-bdep config create --no-default --forward @mod ../libbuild2-hello-build/module/ cc config.config.load=~build2
-bdep init @mod -d libbuild2-hello/
-b libbuild2-hello/
+bdep config create @module ../libbuild2-hello-build/module/ --type build2 cc config.config.load=~build2
+bdep config create @target ../libbuild2-hello-build/target/ cc config.cxx=g++
 
-bdep config create --default --forward @test ../libbuild2-hello-build/tests/ cc config.import.libbuild2_hello=../libbuild2-hello-build/module/
-bdep init @test -d libbuild2-hello-tests/ --no-sync
-bdep sync
+bdep init @module -d libbuild2-hello/
+bdep init @target -d libbuild2-hello-tests/
 ```
 
 Once this is done, we can develop using `bdep` or the build system as usual:
 
 ```
-bdep test                       # run tests in libbuild2-hello-tests/
-b test                          # the same
+bdep test                       # run tests
 b libbuild2-hello/              # update the module directly
+b test: libbuild2-hello-tests/  # run only external tests
 ```
+
+Note also that there is no customary glue `buildfile` in the root of the
+project because building the module and the tests simultaneously would be a
+bad idea (they must be built in separate build contexts).
 
 We can also CI our module, manage releases, and publish it to the package
 repository:
 
 ```
-bdep ci        # submits only the module (which pulls in the tests)
+bdep @module ci  # submits only the module (which pulls in the tests)
 
-bdep release   # releases both the module and the tests
+bdep release     # releases both the module and the tests
 
-bdep publish   # submits both the module and the tests
+bdep publish     # submits both the module and the tests
 ```
-
-Note that the `bdep-ci` and `bdep-publish` commands are tweaked to do the
-right thing in this setup with the default options files located in the
-`.build2/` subdirectory.
 
 
 ## Using in other projects during development
@@ -75,9 +74,10 @@ right thing in this setup with the default options files located in the
 The above setup makes sure the module can be found by its own tests, examples,
 etc. When developing a real module, however, we often want to use our
 development version in other projects that use this module. While explicitly
-configuring each such project with `config.import.libbuild2_*` is possible, it
-is also tedious. Instead, we can specify the necessary variable as a global
-override in our user-wide `~/.build2/b.options` options file:
+configuring each such project with `config.import.libbuild2_*` (as in the
+build system case above) is possible, it is also tedious. Instead, we can
+specify the necessary variable as a global override in our user-wide
+`~/.build2/b.options` options file:
 
 ```
 !config.import.libbuild2_hello=/home/.../libbuild2-hello-build/module/
@@ -91,8 +91,9 @@ in the project's `bootstrap.build` rather than `root.build`) is more
 complicated. The main issue is that when such a module has to be loaded, the
 project's configuration is not yet available. Specifically, neither non-global
 variable overrides have been entered nor has the `config.build` file been
-loaded. As a result, the `config.import.libbuild2_*` variable specified while
-creating the `@test` configuration in the steps above has no effect.
+loaded. As a result, the `config.import.libbuild2_*` variable automatically
+entered by `bdep` while initializing `libbuild2-hello-tests` in the steps
+above has no effect.
 
 The recommended approach to developing such modules is to use the global
 variable override in our user-wide `~/.build2/b.options` options file, the
@@ -102,8 +103,8 @@ same as in the previous section:
 !config.import.libbuild2_hello=/home/.../libbuild2-hello-build/module/
 ```
 
-This global override should be added before creating the `@test`
-configuration.
+This global override should be added before initializing
+`libbuild2-hello-tests`.
 
 If you are planning to CI such a module, then it must be explicitly marked as
 requiring bootstrap by adding the following requirement to its `manifest`:
