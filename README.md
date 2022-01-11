@@ -45,6 +45,21 @@ bdep init @module -d libbuild2-hello/
 bdep init @target -d libbuild2-hello-tests/
 ```
 
+Note that if your build system module project involves a tool (for example, a
+source code generation for which your module provides a build rule), then you
+will also need to create a host configuration and initialize the tool in
+it. For example, if this repository also contained the `hello-tool` package:
+
+```
+bdep config create @host ../libbuild2-hello-build/host/ --type host cc config.cxx=g++
+bdep config create @module ../libbuild2-hello-build/module/ --type build2 cc config.config.load=~build2
+bdep config create @target ../libbuild2-hello-build/target/ cc config.cxx=g++
+
+bdep init @host -d hello-tool/
+bdep init @module -d libbuild2-hello/
+bdep init @target -d libbuild2-hello-tests/
+```
+
 Once this is done, we can develop using `bdep` or the build system as usual:
 
 ```
