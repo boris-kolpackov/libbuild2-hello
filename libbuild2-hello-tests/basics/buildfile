@@ -5,4 +5,6 @@ libs =
 
 exe{basics}: {hxx ixx txx cxx}{**} $libs
 
+$hello.resolve(exe{basics})
+
 cxx.poptions =+ "-I$out_root" "-I$src_root"
