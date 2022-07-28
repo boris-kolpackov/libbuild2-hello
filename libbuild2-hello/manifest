@@ -2,7 +2,7 @@
 #       build2 organization (github.com/build2/).
 : 1
 name: libbuild2-hello
-version: 0.1.0-a.0.z
+version: 0.1.0
 project: build2
 summary: Test build system module for build2
 license: MIT ; MIT License.
