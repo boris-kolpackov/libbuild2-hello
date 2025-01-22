@@ -76,7 +76,7 @@ We can also CI our module, manage releases, and publish it to the package
 repository:
 
 ```
-bdep @module ci  # submits only the module (which pulls in the tests)
+bdep ci @module  # submits only the module (which pulls in the tests)
 
 bdep release     # releases both the module and the tests
 
